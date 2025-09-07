@@ -89,21 +89,34 @@ def downscale_max_side(img: Image.Image, max_side: int = 768) -> Image.Image:
         img = img.resize((int(w / scale), int(h / scale)), Image.LANCZOS)
     return img
 
-def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool) -> str:
-    """정체성 유지 지시 강화 + 입력 토큰 절약형 프롬프트."""
+def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool, num_refs: int) -> str:
+    """정체성 유지 지시 강화 + 다중 참조 이미지 활용 프롬프트."""
     billgates_phrase = (
         "Bill Gates" if use_exact_billgates
         else "a Bill Gates look-alike (middle-aged Caucasian male with glasses)"
     )
+    
+    ref_instruction = ""
+    if num_refs == 1:
+        ref_instruction = "PERSON A: The same individual shown in the uploaded reference selfie."
+    elif num_refs == 2:
+        ref_instruction = "PERSON A: The same individual shown in BOTH uploaded reference selfies."
+    else:  # 3장
+        ref_instruction = "PERSON A: The same individual shown in ALL THREE uploaded reference selfies."
+    
     return (
         "Create a single photorealistic candid smartphone photo of two people.\n"
-        "PERSON A: The same individual shown in ALL uploaded reference selfies. "
-        "STRICT IDENTITY PRESERVATION: Keep PERSON A's face identity EXACTLY the same as the reference photos. "
-        "Do not change identity, facial features, age, skin tone, hairstyle, facial geometry, or proportions. "
-        "If the two references differ, reconcile consistently and keep identity.\n"
+        f"{ref_instruction} "
+        "ULTRA-STRICT IDENTITY PRESERVATION: Keep PERSON A's face identity ABSOLUTELY IDENTICAL across all reference photos. "
+        "Maintain EXACT facial features, bone structure, eye shape, nose shape, mouth shape, jawline, skin tone, age appearance, "
+        "and any distinctive facial characteristics. If multiple references show slight variations, use the MOST CONSISTENT features "
+        "that appear across all references. Do NOT average or blend - pick the most stable, recognizable features. "
+        "Hair style and color should match the most recent/clear reference. Facial expressions can vary naturally but "
+        "the underlying facial identity must remain absolutely unchanged.\n"
         f"PERSON B: {billgates_phrase}.\n"
         f"Scene: {scene_desc}; time/place label: {scene_label} in Seoul.\n"
-        "Camera: ~35mm look, natural skin tones, realistic lighting & shadows, proper hands/fingers, casual outfits.\n"
+        "Camera: Natural smartphone photo style, ~35mm equivalent, realistic lighting & shadows, proper hand/finger anatomy, "
+        "casual appropriate outfits for the scene. Both people should look natural and candid.\n"
         "No text overlays. No borders. Only one image in the result."
     )
 
@@ -179,15 +192,15 @@ HTML_INDEX = """
   </head>
   <body>
     <div class="card">
-      <h1>Bill Gates와 함께 in Korea — 2컷 (참조 2장)</h1>
-      <div class="muted">셀피 <b>최대 2장</b>을 올리면, 두 장을 모두 참조로 사용해 <b>정체성 일관성</b>을 높여 생성합니다.</div>
+      <h1>Bill Gates와 함께 in Korea — 2컷 (참조 최대 3장)</h1>
+      <div class="muted">셀피 <b>최대 3장</b>을 올리면, 모든 사진을 참조로 사용해 <b>정체성 일관성</b>을 극대화하여 생성합니다.</div>
       <form action="/generate" method="post" enctype="multipart/form-data">
         <div class="row">
-          <label>셀피 업로드(최소 1장, 최대 2장):
+          <label>셀피 업로드(최소 1장, 최대 3장):
             <input type="file" name="selfies" accept="image/*" multiple required>
           </label>
         </div>
-        <small>※ 정면 1장 + 약간 각도 다른 1장을 권장합니다.</small>
+        <small>※ 정면 1장 + 좌측 각도 1장 + 우측 각도 1장을 권장합니다. 다양한 각도의 사진이 정체성 일관성을 높입니다.</small>
         <div class="row">
           <label><input type="checkbox" name="exact_billgates" checked>
             빌 게이츠 실존 인물로 시도 (정책/콘텐츠 이슈 시 look-alike로 전환, 단 429/쿼터는 제외)</label>
@@ -214,17 +227,17 @@ def index():
 
 @app.post("/generate", response_class=HTMLResponse)
 async def generate(
-    selfies: List[UploadFile] = File(...),  # 최대 2장
+    selfies: List[UploadFile] = File(...),  # 최대 3장
     exact_billgates: bool = Form(False)
 ):
-    # ---- 업로드 파일 저장 (최대 2장만 사용) ----
+    # ---- 업로드 파일 저장 (최대 3장만 사용) ----
     temp_paths = []
     ref_images: List[Image.Image] = []
     try:
         if not selfies:
             return HTMLResponse("<h3>셀피를 최소 1장 업로드하세요.</h3>", status_code=400)
 
-        for i, uf in enumerate(selfies[:2]):  # 최대 2장
+        for i, uf in enumerate(selfies[:3]):  # 최대 3장
             temp_path = os.path.join(STATIC_DIR, f"upload_{i}_{uuid.uuid4().hex}")
             with open(temp_path, "wb") as f:
                 shutil.copyfileobj(uf.file, f)
@@ -237,7 +250,7 @@ async def generate(
         out_urls, errors = [], []
 
         for scene_label, scene_desc in SCENES:  # 2컷만
-            prompt = compose_prompt(scene_label, scene_desc, use_exact_billgates=exact_billgates)
+            prompt = compose_prompt(scene_label, scene_desc, use_exact_billgates=exact_billgates, num_refs=len(ref_images))
             try:
                 img_bytes = call_gemini_generate(ref_images, prompt)
             except Exception as e1:
@@ -248,7 +261,7 @@ async def generate(
                 # 정책/콘텐츠 이슈 추정 시 look-alike로 1회 재시도
                 if exact_billgates:
                     try:
-                        fallback_prompt = compose_prompt(scene_label, scene_desc, use_exact_billgates=False)
+                        fallback_prompt = compose_prompt(scene_label, scene_desc, use_exact_billgates=False, num_refs=len(ref_images))
                         img_bytes = call_gemini_generate(ref_images, fallback_prompt)
                     except Exception as e2:
                         errors.append(f"{scene_label}: 실패 — {e2}")
