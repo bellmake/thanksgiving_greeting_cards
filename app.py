@@ -101,18 +101,24 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
         ref_instruction = "PERSON A: The same individual shown in the uploaded reference selfie."
     elif num_refs == 2:
         ref_instruction = "PERSON A: The same individual shown in BOTH uploaded reference selfies."
-    else:  # 3장
+    elif num_refs == 3:
         ref_instruction = "PERSON A: The same individual shown in ALL THREE uploaded reference selfies."
+    else:  # 4장 이상
+        ref_instruction = f"PERSON A: The same individual shown in ALL {num_refs} uploaded reference selfies."
     
     return (
         "Create a single photorealistic candid smartphone photo of two people.\n"
         f"{ref_instruction} "
         "ULTRA-STRICT IDENTITY PRESERVATION: Keep PERSON A's face identity ABSOLUTELY IDENTICAL across all reference photos. "
+        "Analyze ALL reference images comprehensively to extract the MOST CONSISTENT and STABLE facial features. "
         "Maintain EXACT facial features, bone structure, eye shape, nose shape, mouth shape, jawline, skin tone, age appearance, "
-        "and any distinctive facial characteristics. If multiple references show slight variations, use the MOST CONSISTENT features "
-        "that appear across all references. Do NOT average or blend - pick the most stable, recognizable features. "
-        "Hair style and color should match the most recent/clear reference. Facial expressions can vary naturally but "
-        "the underlying facial identity must remain absolutely unchanged.\n"
+        "facial proportions, and any distinctive characteristics (moles, scars, dimples, etc.). "
+        "CRITICAL: When multiple references show variations, prioritize the features that appear MOST FREQUENTLY and CONSISTENTLY "
+        "across the majority of reference images. Do NOT average or blend features - select the most reliable, recognizable traits. "
+        "For hair: use the style and color that appears in the clearest/most recent reference. "
+        "For skin tone: match the most consistent tone across all references. "
+        "Facial expressions can vary naturally but the underlying bone structure and facial identity must remain ABSOLUTELY UNCHANGED. "
+        "The person must be immediately recognizable as the same individual from all reference photos.\n"
         f"PERSON B: {billgates_phrase}.\n"
         f"Scene: {scene_desc}; time/place label: {scene_label} in Seoul.\n"
         "Camera: Natural smartphone photo style, ~35mm equivalent, realistic lighting & shadows, proper hand/finger anatomy, "
@@ -121,11 +127,11 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
     )
 
 def call_gemini_generate(ref_images: List[Image.Image], prompt: str) -> bytes:
-    """Gemini 호출: 참조 사진(1~2장)을 먼저, 프롬프트를 나중에. 후보 1개(기본). 빠른 실패/짧은 백오프."""
+    """Gemini 호출: 참조 사진(다중)을 먼저, 프롬프트를 나중에. 후보 1개(기본). 빠른 실패/짧은 백오프."""
     client = genai.Client(api_key=API_KEY)
     model_name = "gemini-2.5-flash-image-preview"
 
-    # contents 구성: [ref1, ref2?, prompt]
+    # contents 구성: [ref1, ref2, ref3, ..., prompt]
     contents = []
     for im in ref_images:
         contents.append(im)
@@ -192,15 +198,15 @@ HTML_INDEX = """
   </head>
   <body>
     <div class="card">
-      <h1>Bill Gates와 함께 in Korea — 2컷 (참조 최대 3장)</h1>
-      <div class="muted">셀피 <b>최대 3장</b>을 올리면, 모든 사진을 참조로 사용해 <b>정체성 일관성</b>을 극대화하여 생성합니다.</div>
+      <h1>Bill Gates와 함께 in Korea — 2컷 (참조 3장 이상)</h1>
+      <div class="muted">셀피 <b>최소 3장 이상</b>을 올리면, 모든 사진을 참조로 사용해 <b>정체성 일관성</b>을 극대화하여 생성합니다.</div>
       <form action="/generate" method="post" enctype="multipart/form-data">
         <div class="row">
-          <label>셀피 업로드(최소 1장, 최대 3장):
+          <label>셀피 업로드(최소 3장, 개수 제한 없음):
             <input type="file" name="selfies" accept="image/*" multiple required>
           </label>
         </div>
-        <small>※ 정면 1장 + 좌측 각도 1장 + 우측 각도 1장을 권장합니다. 다양한 각도의 사진이 정체성 일관성을 높입니다.</small>
+        <small>※ 최소 3장 이상의 다양한 각도 사진을 권장합니다. 정면, 좌측, 우측, 위, 아래 각도 등 더 많은 사진이 정체성 일관성을 높입니다.</small>
         <div class="row">
           <label><input type="checkbox" name="exact_billgates" checked>
             빌 게이츠 실존 인물로 시도 (정책/콘텐츠 이슈 시 look-alike로 전환, 단 429/쿼터는 제외)</label>
@@ -227,17 +233,17 @@ def index():
 
 @app.post("/generate", response_class=HTMLResponse)
 async def generate(
-    selfies: List[UploadFile] = File(...),  # 최대 3장
+    selfies: List[UploadFile] = File(...),  # 개수 제한 없음
     exact_billgates: bool = Form(False)
 ):
-    # ---- 업로드 파일 저장 (최대 3장만 사용) ----
+    # ---- 업로드 파일 저장 (모든 사진 사용) ----
     temp_paths = []
     ref_images: List[Image.Image] = []
     try:
-        if not selfies:
-            return HTMLResponse("<h3>셀피를 최소 1장 업로드하세요.</h3>", status_code=400)
+        if not selfies or len(selfies) < 3:
+            return HTMLResponse("<h3>셀피를 최소 3장 이상 업로드하세요.</h3>", status_code=400)
 
-        for i, uf in enumerate(selfies[:3]):  # 최대 3장
+        for i, uf in enumerate(selfies):  # 모든 사진 사용
             temp_path = os.path.join(STATIC_DIR, f"upload_{i}_{uuid.uuid4().hex}")
             with open(temp_path, "wb") as f:
                 shutil.copyfileobj(uf.file, f)
