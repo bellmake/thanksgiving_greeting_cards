@@ -39,14 +39,14 @@ BILLGATES_SCENES: List[Tuple[str, str]] = [
 ]
 
 JOKER_SCENES: List[Tuple[str, str]] = [
+    ("조커의 유명한 계단 (브롱크스)",
+     "on the world-famous concrete stairs from Joker (2019) movie in the Bronx, the exact iconic location where Arthur Fleck danced as Joker, dramatic golden hour lighting with warm glow, urban decay background, the most recognizable stairs scene in cinema history"),
     ("고담시티 거리",
-     "on a Gotham City street at night, dramatic urban lighting, dark atmospheric setting"),
-    ("아케디 아케이드",
-     "in an old arcade, neon lights and vintage game machines in background, moody atmosphere"),
-    ("극장 계단",
-     "on iconic concrete stairs, dramatic lighting, urban decay background"),
+     "on a dark Gotham City street at night, dramatic urban lighting, atmospheric street setting with vintage architecture"),
+    ("아케이드 게임장",
+     "in an old retro arcade, neon lights and vintage game machines in background, moody 80s atmosphere"),
     ("웨인 극장 앞",
-     "in front of Wayne Theater, classic Gotham architecture, evening atmosphere"),
+     "in front of the historic Wayne Theater, classic Gotham architecture, evening cinematic atmosphere"),
 ]
 
 # ---------- 레이트리밋/재시도/데드라인 설정 (빠른 실패 지향) ----------
