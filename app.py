@@ -98,7 +98,9 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
     
     ref_instruction = ""
     if num_refs == 1:
-        ref_instruction = "PERSON A: The same individual shown in the uploaded reference selfie."
+        ref_instruction = ("PERSON A: The EXACT same individual shown in the uploaded reference selfie. "
+                         "CRITICAL: Maintain IDENTICAL facial angle, head position, gaze direction, and facial expression. "
+                         "Do NOT change the person's looking direction, head tilt, or facial orientation from the reference image.")
     elif num_refs == 2:
         ref_instruction = "PERSON A: The same individual shown in BOTH uploaded reference selfies."
     elif num_refs == 3:
@@ -227,15 +229,15 @@ HTML_INDEX = """
   </head>
   <body>
     <div class="card">
-      <h1>Bill Gates와 함께 in Korea — 2컷 (참조 3장 이상)</h1>
-      <div class="muted">셀피 <b>최소 3장 이상</b>을 올리면, 모든 사진을 참조로 사용해 <b>정체성 일관성</b>을 극대화하여 고품질 2장을 생성합니다.</div>
+      <h1>Bill Gates와 함께 in Korea — 2컷 (참조 1장 이상)</h1>
+      <div class="muted">셀피 <b>최소 1장 이상</b>을 올리면, 모든 사진을 참조로 사용해 <b>정체성 일관성</b>을 극대화하여 고품질 2장을 생성합니다.</div>
       <form action="/generate" method="post" enctype="multipart/form-data">
         <div class="row">
-          <label>셀피 업로드(최소 3장, 개수 제한 없음):
+          <label>셀피 업로드(최소 1장, 개수 제한 없음):
             <input type="file" name="selfies" accept="image/*" multiple required>
           </label>
         </div>
-        <small>※ 최소 3장 이상의 다양한 각도 사진을 권장합니다. 정면, 좌측, 우측, 위, 아래 각도 등 더 많은 사진이 정체성 일관성을 높입니다.</small>
+        <small>※ 1장만 업로드 시 얼굴과 시선 방향이 그대로 유지됩니다. 3장 이상의 다양한 각도 사진을 권장합니다.</small>
         <div class="row">
           <label><input type="checkbox" name="exact_billgates" checked>
             빌 게이츠 실존 인물로 시도 (정책/콘텐츠 이슈 시 look-alike로 전환, 단 429/쿼터는 제외)</label>
@@ -268,8 +270,8 @@ async def generate(
     temp_paths = []
     ref_images: List[Image.Image] = []
     try:
-        if not selfies or len(selfies) < 3:
-            return HTMLResponse("<h3>셀피를 최소 3장 이상 업로드하세요.</h3>", status_code=400)
+        if not selfies or len(selfies) < 1:
+            return HTMLResponse("<h3>셀피를 최소 1장 이상 업로드하세요.</h3>", status_code=400)
 
         for i, uf in enumerate(selfies):  # 모든 사진 사용
             temp_path = os.path.join(STATIC_DIR, f"upload_{i}_{uuid.uuid4().hex}")
