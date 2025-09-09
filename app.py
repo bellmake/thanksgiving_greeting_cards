@@ -26,16 +26,12 @@ STATIC_DIR = str(BASE_DIR / "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# ---------- 장면(4컷) ----------
+# ---------- 장면(2컷, 고퀄리티) ----------
 SCENES: List[Tuple[str, str]] = [
-    ("08:00 경복궁 근정전 앞",
-     "at Gyeongbokgung Palace (Geunjeongjeon), early morning soft light, traditional palace architecture in background"),
     ("12:00 명동 거리 카페",
-     "at a trendy cafe in Myeongdong street, casual friendly atmosphere, standing close together with arms around each other's shoulders in a warm friendly pose"),
-    ("16:00 한강공원 벤치",
-     "at Hangang Park on a bench, afternoon golden hour lighting, relaxed casual setting with Seoul skyline in background"),
+     "at a trendy cafe in Myeongdong street, casual friendly atmosphere, standing close together with arms around each other's shoulders in a warm friendly pose, perfect natural lighting, professional photo quality"),
     ("19:00 N서울타워 전망대",
-     "at N Seoul Tower observatory, sunset skyline view of Seoul"),
+     "at N Seoul Tower observatory, sunset golden hour lighting with Seoul skyline in background, both looking relaxed and happy, cinematic composition with perfect depth of field"),
 ]
 
 # ---------- 레이트리밋/재시도/데드라인 설정 (빠른 실패 지향) ----------
@@ -141,9 +137,12 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
         "facial structure, body type, and physical identity markers must remain COMPLETELY UNCHANGED.\n"
         f"PERSON B: {billgates_phrase}.\n"
         f"Scene: {scene_desc}; time/place label: {scene_label} in Seoul.\n"
-        "Camera: Natural smartphone photo style, ~35mm equivalent, realistic lighting & shadows, proper hand/finger anatomy, "
-        "casual appropriate outfits for the scene. Both people should look natural and candid.\n"
-        "No text overlays. No borders. Only one image in the result."
+        "Camera: Professional smartphone photography, ~35mm equivalent, perfect natural lighting with studio-quality shadows, "
+        "flawless hand/finger anatomy, premium casual outfits appropriate for the scene. Both people should look naturally candid "
+        "yet cinematically composed with magazine-quality aesthetics.\n"
+        "TECHNICAL REQUIREMENTS: Ultra-high resolution details, perfect skin texture, natural color grading, professional depth of field, "
+        "studio-quality lighting that enhances facial features without harsh shadows.\n"
+        "No text overlays. No borders. Only one pristine image in the result."
     )
 
 def call_gemini_generate(ref_images: List[Image.Image], prompt: str) -> bytes:
@@ -218,8 +217,8 @@ HTML_INDEX = """
   </head>
   <body>
     <div class="card">
-      <h1>Bill Gates와 함께 in Korea — 4컷 (참조 3장 이상)</h1>
-      <div class="muted">셀피 <b>최소 3장 이상</b>을 올리면, 모든 사진을 참조로 사용해 <b>정체성 일관성</b>을 극대화하여 생성합니다.</div>
+      <h1>Bill Gates와 함께 in Korea — 2컷 (참조 3장 이상)</h1>
+      <div class="muted">셀피 <b>최소 3장 이상</b>을 올리면, 모든 사진을 참조로 사용해 <b>정체성 일관성</b>을 극대화하여 고품질 2장을 생성합니다.</div>
       <form action="/generate" method="post" enctype="multipart/form-data">
         <div class="row">
           <label>셀피 업로드(최소 3장, 개수 제한 없음):
@@ -236,7 +235,7 @@ HTML_INDEX = """
           <span class="pill">AI-Generated</span> 표시가 추가됩니다. 사칭/허위정보 사용은 금지.
           업로드 이미지는 처리 후 즉시 삭제됩니다.
         </div>
-        <div class="row"><button class="btn" type="submit">4장 생성하기</button></div>
+        <div class="row"><button class="btn" type="submit">2장 생성하기</button></div>
       </form>
       <footer>
         모델: Google <b>Gemini 2.5 Flash Image</b> · SynthID 워터마크 포함
@@ -275,7 +274,7 @@ async def generate(
 
         out_urls, errors = [], []
 
-        for scene_label, scene_desc in SCENES:  # 4컷
+        for scene_label, scene_desc in SCENES:  # 2컷만
             prompt = compose_prompt(scene_label, scene_desc, use_exact_billgates=exact_billgates, num_refs=len(ref_images))
             try:
                 img_bytes = call_gemini_generate(ref_images, prompt)
@@ -323,7 +322,7 @@ async def generate(
         err_html = f'<div class="note" style="margin-top:16px;color:#b42318;border-color:#fecaca;background:#fff1f2"><b>일부 실패</b><br/>{err_list}</div>'
 
     html = f"""
-    <html><head><meta charset="utf-8"><title>결과 — 4컷</title>
+    <html><head><meta charset="utf-8"><title>결과 — 2컷</title>
     <style>
       body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:32px;color:#111}}
       .grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}}
