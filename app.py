@@ -241,9 +241,8 @@ HTML_INDEX = """
             빌 게이츠 실존 인물로 시도 (정책/콘텐츠 이슈 시 look-alike로 전환, 단 429/쿼터는 제외)</label>
         </div>
         <div class="note">
-          <b>주의/윤리</b> · 본 서비스는 AI 합성 이미지를 생성하며, 모든 생성물에는
-          <span class="pill">AI-Generated</span> 표시가 추가됩니다. 사칭/허위정보 사용은 금지.
-          업로드 이미지는 처리 후 즉시 삭제됩니다.
+          <b>주의/윤리</b> · 본 서비스는 AI 합성 이미지를 생성합니다. 
+          사칭/허위정보 사용은 금지. 업로드 이미지는 처리 후 즉시 삭제됩니다.
         </div>
         <div class="row"><button class="btn" type="submit">2장 생성하기</button></div>
       </form>
@@ -305,12 +304,8 @@ async def generate(
                     errors.append(f"{scene_label}: 실패 — {e1}")
                     continue
 
-            # 워터마크 + 저장
-            img = Image.open(BytesIO(img_bytes)).convert("RGBA")
-            img = visible_watermark(img, tag="AI-Generated")
-            buf = BytesIO()
-            img.save(buf, format="PNG")
-            saved_url = save_image_bytes(buf.getvalue(), suffix=".png")
+            # 이미지 저장 (워터마크 없음)
+            saved_url = save_image_bytes(img_bytes, suffix=".png")
             out_urls.append(saved_url)
 
     finally:
@@ -348,8 +343,7 @@ async def generate(
       <div class="grid">{thumbs}</div>
       {err_html}
       <p class="muted" style="margin-top:18px">
-        모든 이미지는 Google Gemini가 삽입하는 <b>SynthID</b> 워터마크를 포함하며,
-        화면 좌측하단의 <b>AI-Generated</b> 표시는 본 앱이 추가합니다.
+        모든 이미지는 Google Gemini가 삽입하는 <b>SynthID</b> 워터마크를 포함합니다.
       </p>
     </body></html>
     """
