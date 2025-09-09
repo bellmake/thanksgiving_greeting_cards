@@ -100,13 +100,17 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
     if num_refs == 1:
         ref_instruction = ("PERSON A: The EXACT same individual shown in the uploaded reference selfie. "
                          "CRITICAL: Maintain IDENTICAL facial angle, head position, gaze direction, and facial expression. "
-                         "Do NOT change the person's looking direction, head tilt, or facial orientation from the reference image.")
+                         "ULTRA-CRITICAL EYE PRESERVATION: Keep the EXACT eye shape, size, eyelid structure, iris color, and gaze direction from the reference. "
+                         "Do NOT change the person's looking direction, head tilt, facial orientation, or eye characteristics from the reference image.")
     elif num_refs == 2:
-        ref_instruction = "PERSON A: The same individual shown in BOTH uploaded reference selfies."
+        ref_instruction = ("PERSON A: The same individual shown in BOTH uploaded reference selfies. "
+                         "ULTRA-CRITICAL EYE PRESERVATION: Study both references to identify the EXACT eye characteristics and maintain them perfectly.")
     elif num_refs == 3:
-        ref_instruction = "PERSON A: The same individual shown in ALL THREE uploaded reference selfies."
+        ref_instruction = ("PERSON A: The same individual shown in ALL THREE uploaded reference selfies. "
+                         "ULTRA-CRITICAL EYE PRESERVATION: Analyze all three references to extract the most consistent eye features and preserve them exactly.")
     else:  # 4장 이상
-        ref_instruction = f"PERSON A: The same individual shown in ALL {num_refs} uploaded reference selfies."
+        ref_instruction = (f"PERSON A: The same individual shown in ALL {num_refs} uploaded reference selfies. "
+                         "ULTRA-CRITICAL EYE PRESERVATION: Comprehensively analyze all references to identify the person's true eye characteristics and maintain them with absolute precision.")
     
     return (
         "Create a single photorealistic candid smartphone photo of two people.\n"
@@ -116,7 +120,15 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
         "Extract the MOST RELIABLE and CONSISTENT features across ALL references, ignoring lighting/angle variations.\n"
         "MANDATORY PRESERVATION CHECKLIST - FACIAL FEATURES:\n"
         "✓ EXACT bone structure and facial geometry (jaw shape, cheekbone prominence, forehead shape)\n"
-        "✓ PRECISE eye characteristics (shape, size, spacing, eyelid structure, iris color)\n"
+        "✓ ULTRA-PRECISE EYE CHARACTERISTICS - HIGHEST PRIORITY:\n"
+        "  • EXACT eye shape and size (round, almond, hooded, etc.)\n"
+        "  • IDENTICAL eye spacing and positioning relative to nose bridge\n"
+        "  • PERFECT eyelid structure (upper/lower lid fold patterns, thickness)\n"
+        "  • EXACT iris color, size, and pupil characteristics\n"
+        "  • IDENTICAL eyebrow shape, thickness, arch, and positioning\n"
+        "  • PRECISE eye corner shape (inner/outer canthus angles)\n"
+        "  • EXACT under-eye area characteristics (bags, lines, shadows)\n"
+        "  • IDENTICAL eye expression and natural resting position\n"
         "✓ IDENTICAL nose features (bridge width, nostril shape, tip angle, overall proportions)\n"
         "✓ EXACT mouth and lip characteristics (shape, size, cupid's bow, lip thickness)\n"
         "✓ PERFECT facial proportions (eye-to-nose, nose-to-mouth ratios)\n"
@@ -141,6 +153,12 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
         "ULTRA-CRITICAL INSTRUCTION: Analyze ALL reference images to determine the person's CONSISTENT body type and physique. "
         "If references show variations due to clothing or angles, prioritize the MOST REPRESENTATIVE body characteristics. "
         "NEVER alter or idealize the person's natural body proportions - maintain their authentic physique exactly as shown. "
+        "EYE CONSISTENCY ULTRA-PRIORITY: The eyes are the most important feature for identity recognition. "
+        "Study each reference image to identify the EXACT eye characteristics that remain consistent across different angles and lighting. "
+        "For single reference: maintain EXACT eye angle, gaze direction, and expression. "
+        "For multiple references: identify the MOST RELIABLE eye features that appear consistently. "
+        "Never modify eye shape, size, color, or spacing - these are identity-defining characteristics. "
+        "Pay special attention to: eye symmetry, pupil size, iris patterns, eyelash density, and natural eye expression. "
         "CLOTHING ADAPTATION RULES: Study the clothing styles in ALL reference images to understand the person's fashion preferences. "
         "Adapt their clothing style to the scene while maintaining their personal aesthetic - if they wear casual clothes, keep it casual; "
         "if they prefer fitted clothing, maintain that preference; if they like certain colors or patterns, incorporate similar elements. "
