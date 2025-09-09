@@ -182,13 +182,15 @@ def compose_prompt(scene_label: str, scene_desc: str, use_exact_billgates: bool,
         "The generated person must be INSTANTLY recognizable as the SAME individual from the references in face, body, AND personal style, "
         "even by people who know them personally. The underlying facial structure, body type, and style identity must remain COMPLETELY UNCHANGED.\n"
         f"PERSON B: {billgates_phrase}.\n"
-        f"Scene: {scene_desc}; time/place label: {scene_label} in Seoul.\n"
+        f"Scene: {scene_desc} in Seoul, Korea.\n"
         "Camera: Professional smartphone photography, ~35mm equivalent, perfect natural lighting with studio-quality shadows, "
         "flawless hand/finger anatomy, premium casual outfits appropriate for the scene. Both people should look naturally candid "
         "yet cinematically composed with magazine-quality aesthetics.\n"
         "TECHNICAL REQUIREMENTS: Ultra-high resolution details, perfect skin texture, natural color grading, professional depth of field, "
         "studio-quality lighting that enhances facial features without harsh shadows.\n"
-        "No text overlays. No borders. Only one pristine image in the result."
+        "ABSOLUTELY NO TEXT, LABELS, OR OVERLAYS: Do not include any text, time stamps, location names, captions, watermarks, "
+        "or any written elements in the image. The photo should be completely clean without any textual information. "
+        "No borders, frames, or graphic elements. Only one pristine, text-free image in the result."
     )
 
 def call_gemini_generate(ref_images: List[Image.Image], prompt: str) -> bytes:
